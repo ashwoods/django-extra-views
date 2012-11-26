@@ -162,3 +162,41 @@ class SortableListMixin(object):
         if hasattr(self, 'sort_helper'):
             ctx['sort_helper'] = self.sort_helper
         return ctx
+
+
+
+class FilterListMixin(object):
+    """
+        Using managers to filter
+    """
+
+    filter_aliases = []
+    filter_prefix = 'fby_'
+    method_prefix = None
+
+    def get_filter_fields(self):
+
+        if self.method_prefix:
+            pass # TODO: automatic filter discovery
+
+        elif self.filter_aliases:
+            filter_fields = [x for x,y in self.filter_aliases]
+
+        else:
+            raise ImproperlyConfigured('You must specify either filter_aliases or filter_prefix')
+
+    def _filter_queryset(self, qs):
+        GET_filters = [param for param in self.request.GET.iterkeys() if param.startswith(self.filter_prefix)]
+        for filter in GET_filters:
+            qs = getattr(qs, filter)(self.request.GET[filter])
+        return qs
+
+    def get_queryset(self):
+        qs = super(FilterListMixin, self).get_queryset()
+        return self._filter_queryset(qs)
+
+    #ef get_context_data(self, **kwargs):
+    #   ctx = super(FilterListMixin, self).get_context_data(**kwargs)
+    #   if hasattr(self, 'sort_helper'):
+    #       ctx['sort_helper'] = self.sort_helper
+    #   return ctx
